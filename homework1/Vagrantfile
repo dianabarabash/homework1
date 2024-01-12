@@ -1,0 +1,35 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "centos/7"
+  config.vm.box_check_update = false
+
+  # Disable rsync
+  config.vm.synced_folder '.', '/vagrant', disabled: true
+
+  # Create a forwarded port mapping which allows access to a specific port
+  # within the machine from a port on the host machine. In the example below,
+  # accessing "localhost:8080" will access port 80 on the guest machine.
+  # NOTE: This will enable public access to the opened port
+  config.vm.network "forwarded_port", guest: 80, host: 8888
+
+  # Create a private network, which allows host-only access to the machine
+  # using a specific IP.
+  config.vm.network "private_network", ip: "192.168.33.10"
+
+   config.vm.provision "shell", inline: <<-SHELL
+     yum install -y epel-release
+     yum install -y nginx
+   
+     rm -fr /usr/share/nginx/html/*
+     
+     # Create index.html and add a dummy line to it:
+     echo "<h1>Hello world!</h1>" > /usr/share/nginx/html/index.html
+ 
+     setenforce 0
+     sed -ie 's/^SELINUX=.*$/SELINUX=disabled/' /etc/selinux/config
+     systemctl start nginx
+     systemctl enable nginx
+   SHELL
+end
